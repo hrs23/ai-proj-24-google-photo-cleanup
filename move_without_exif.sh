@@ -118,7 +118,12 @@ find "$INPUT_DIR" -type f \( \
     xargs -0 -P "$PARALLEL_JOBS" -I {} bash -c 'check_non_exif_file "{}"' > "$temp_file"
 
 # 結果確認
-move_count=$(grep -c . "$temp_file" 2>/dev/null || echo 0)
+if [ -s "$temp_file" ]; then
+    move_count=$(wc -l < "$temp_file")
+else
+    move_count=0
+fi
+
 echo
 echo "移動対象ファイル数: $move_count"
 
@@ -220,9 +225,7 @@ else
     echo "重複: $duplicate_count ファイル"
     echo
     echo "実際に移動するには以下を実行:"
-    echo "  $0 $INPUT_DIR move"
-    echo "または:"
-    echo "  echo \"y\" | $0 $INPUT_DIR move"
+    echo "  $0 $INPUT_DIR $OUTPUT_DIR"
 fi
 
 echo "========================================"
