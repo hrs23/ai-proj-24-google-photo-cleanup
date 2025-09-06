@@ -3,25 +3,56 @@
 # EXIF日時付きファイル（主にJPEG）移動スクリプト
 
 if [[ $# -lt 2 ]]; then
-    echo "Usage: $0 [test|move] <input_dir> <output_dir>"
-    echo "  test|move:    テスト実行 または 実際に移動を実行"
+    echo "Usage: $0 [--dry-run] <input_dir> <output_dir>"
+    echo "  --dry-run:    テスト実行（実際の移動は行わない）"
     echo "  <input_dir>:  検索対象ディレクトリ"
     echo "  <output_dir>: 移動先ディレクトリ"
     exit 1
 fi
 
-MODE="$1"
-INPUT_DIR="$(realpath "$2")"
-OUTPUT_DIR="$(realpath "$3")"
+# Parse options
+DRY_RUN=false
+INPUT_DIR=""
+OUTPUT_DIR=""
 
-if [[ ! -d "$INPUT_DIR" ]]; then
-    echo "Error: Input directory does not exist: $2"
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --dry-run)
+            DRY_RUN=true
+            shift
+            ;;
+        -*)
+            echo "Error: Unknown option $1"
+            exit 1
+            ;;
+        *)
+            if [ -z "$INPUT_DIR" ]; then
+                INPUT_DIR="$(realpath "$1")"
+            elif [ -z "$OUTPUT_DIR" ]; then
+                OUTPUT_DIR="$(realpath "$1")"
+            else
+                echo "Error: Too many arguments"
+                exit 1
+            fi
+            shift
+            ;;
+    esac
+done
+
+if [ -z "$INPUT_DIR" ] || [ -z "$OUTPUT_DIR" ]; then
+    echo "Error: Both input and output directories required"
     exit 1
 fi
 
-if [ "$MODE" != "test" ] && [ "$MODE" != "move" ]; then
-    echo "Error: First argument must be 'test' or 'move'"
+if [[ ! -d "$INPUT_DIR" ]]; then
+    echo "Error: Input directory does not exist: $INPUT_DIR"
     exit 1
+fi
+
+if [ "$DRY_RUN" = true ]; then
+    MODE="test"
+else
+    MODE="move"
 fi
 
 echo "=== EXIF対応ファイル移動スクリプト ==="

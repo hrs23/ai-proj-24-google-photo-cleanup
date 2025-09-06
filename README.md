@@ -13,10 +13,10 @@ cd ai-proj-24-google-photo-cleanup
 chmod +x *.sh
 
 # Process your Google Photos Takeout data
-./fix_exif_files.sh fix takeout
-./move_with_exif.sh move takeout out
-./fix_non_exif_files.sh fix takeout
-./move_without_exif.sh move takeout out_nonexif
+./fix_exif_files.sh takeout
+./move_with_exif.sh takeout out
+./fix_non_exif_files.sh takeout
+./move_without_exif.sh takeout out_nonexif
 ./remove_duplicates_fast.sh out remove
 ./remove_duplicates_fast.sh out_nonexif remove
 ```
@@ -33,24 +33,24 @@ chmod +x *.sh
 
 ```bash
 # Fix EXIF data from multiple sources
-./fix_exif_files.sh test takeout    # Test mode first
-./fix_exif_files.sh fix takeout     # Apply fixes
+./fix_exif_files.sh --dry-run takeout    # Preview changes first
+./fix_exif_files.sh takeout              # Apply fixes
 
 # Move processed JPEG files
-./move_with_exif.sh test takeout out    # Test mode
-./move_with_exif.sh move takeout out    # Move files
+./move_with_exif.sh --dry-run takeout out    # Preview moves
+./move_with_exif.sh takeout out              # Move files
 ```
 
 ### 2. Non-EXIF Processing (GIF/PNG/AVI files)
 
 ```bash
 # Set file timestamps from filename patterns
-./fix_non_exif_files.sh test takeout    # Test mode
-./fix_non_exif_files.sh fix takeout     # Apply fixes
+./fix_non_exif_files.sh --dry-run takeout    # Preview changes
+./fix_non_exif_files.sh takeout              # Apply fixes
 
 # Move non-EXIF files
-./move_without_exif.sh test takeout out_nonexif    # Test mode
-./move_without_exif.sh move takeout out_nonexif    # Move files
+./move_without_exif.sh --dry-run takeout out_nonexif    # Preview moves
+./move_without_exif.sh takeout out_nonexif              # Move files
 ```
 
 ### 3. Remove Duplicates
@@ -92,7 +92,7 @@ chmod +x *.sh
 
 ## Safety Features
 
-- **Test mode**: All scripts support `test` mode to preview changes
+- **Dry-run mode**: Use `--dry-run` to preview changes before execution
 - **Backup recommended**: Always backup your data before processing
 - **Non-destructive**: Files are moved, not copied (preserves disk space)
 - **Duplicate handling**: Automatic filename numbering for conflicts

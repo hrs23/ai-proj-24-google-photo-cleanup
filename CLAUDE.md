@@ -6,12 +6,16 @@ GoogleフォトのTakeoutデータから撮影日時を抽出してファイル�
 
 ```bash
 # 1. JPEG処理（EXIF対応）
-./fix_exif_files.sh fix takeout
-./move_with_exif.sh move takeout out
+./fix_exif_files.sh --dry-run takeout      # 事前確認
+./fix_exif_files.sh takeout                # 実際に実行
+./move_with_exif.sh --dry-run takeout out  # 事前確認  
+./move_with_exif.sh takeout out             # 実際に移動
 
 # 2. GIF/PNG/AVI処理（EXIF非対応）
-./fix_non_exif_files.sh fix takeout
-./move_without_exif.sh move takeout out_nonexif
+./fix_non_exif_files.sh --dry-run takeout        # 事前確認
+./fix_non_exif_files.sh takeout                  # 実際に実行
+./move_without_exif.sh --dry-run takeout out_nonexif  # 事前確認
+./move_without_exif.sh takeout out_nonexif             # 実際に移動
 
 # 3. 重複削除
 ./remove_duplicates_fast.sh out remove
@@ -21,7 +25,7 @@ GoogleフォトのTakeoutデータから撮影日時を抽出してファイル�
 ## ⚠️ 重要事項
 
 - **事前にバックアップを取る**
-- 初回は `test` モードで確認してから `fix` モードで実行
+- 初回は `--dry-run` オプションで確認してから実際に実行
 - 出力フォルダは自由に指定可能
 
 ## 📁 スクリプト構成

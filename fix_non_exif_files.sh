@@ -2,24 +2,53 @@
 
 # EXIF非対応ファイル（GIF、PNG、AVI等）のタイムスタンプ処理スクリプト
 
-if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 [test|fix] <directory>"
-    echo "  test|fix:   テストモード または 実際に修正を実行"
+if [ "$#" -eq 0 ]; then
+    echo "Usage: $0 [--dry-run] <directory>"
+    echo "  --dry-run:  テストモード（変更を表示のみ）"
     echo "  directory:  処理対象ディレクトリ"
     exit 1
 fi
 
-MODE="$1"
-DIR="$2"
+# Parse options
+DRY_RUN=false
+DIR=""
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --dry-run)
+            DRY_RUN=true
+            shift
+            ;;
+        -*)
+            echo "Error: Unknown option $1"
+            exit 1
+            ;;
+        *)
+            if [ -z "$DIR" ]; then
+                DIR="$1"
+            else
+                echo "Error: Too many arguments"
+                exit 1
+            fi
+            shift
+            ;;
+    esac
+done
+
+if [ -z "$DIR" ]; then
+    echo "Error: Directory argument required"
+    exit 1
+fi
 
 if [ ! -d "$DIR" ]; then
     echo "Error: Directory '$DIR' does not exist"
     exit 1
 fi
 
-if [ "$MODE" != "test" ] && [ "$MODE" != "fix" ]; then
-    echo "Error: First argument must be 'test' or 'fix'"
-    exit 1
+if [ "$DRY_RUN" = true ]; then
+    MODE="test"
+else
+    MODE="fix"
 fi
 
 echo "=== EXIF非対応ファイル処理 ==="
