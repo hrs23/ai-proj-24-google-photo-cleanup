@@ -1,125 +1,52 @@
-# Google Photos Takeout Cleanup Scripts
+# Google Photos Takeout Cleanup (Simplified)
 
-A collection of shell scripts to process Google Photos Takeout data, extract timestamps, and organize files by EXIF capability.
+Process Google Photos Takeout data with safe commands.
 
-## Quick Start
+## 🎯 Capabilities
+- 📝 Fill dates from Google metadata (JPEG/PNG/HEIC/MP4/MOV/3GP/AVI)
+- 🧭 Infer dates from folder names (JPEG/PNG/HEIC/MP4/MOV/3GP/AVI)
+- 📁 Move files that already have EXIF/QuickTime/XMP timestamps (photos/TIFF/PNG/HEIC/videos incl. 3GP/AVI)
 
-```bash
-# Clone the repository
-git clone git@github.com:hrs23/ai-proj-24-google-photo-cleanup.git
-cd ai-proj-24-google-photo-cleanup
-
-# Make scripts executable (if needed)
-chmod +x *.sh
-
-# Process your Google Photos Takeout data
-./fix_exif_files.sh takeout
-./move_with_exif.sh takeout out
-./fix_non_exif_files.sh takeout
-./move_without_exif.sh takeout out_nonexif
-./remove_duplicates_fast.sh out remove
-./remove_duplicates_fast.sh out_nonexif remove
-```
-
-## Prerequisites
-
-- `bash` shell
-- `exiftool` - Install with `apt install libimage-exiftool-perl` (Ubuntu/Debian) or `brew install exiftool` (macOS)
-- Standard Unix utilities: `find`, `grep`, `date`, `file`
-
-## Usage
-
-### 1. JPEG Processing (EXIF-capable files)
+## ⚙️ Environment
+- Requires `python3` and `exiftool`
+- Run from project root with `PYTHONPATH=src` (or add `src` to `PYTHONPATH` in your shell profile)
 
 ```bash
-# Fix EXIF data from multiple sources
-./fix_exif_files.sh --dry-run takeout    # Preview changes first
-./fix_exif_files.sh takeout              # Apply fixes
-
-# Move processed JPEG files
-./move_with_exif.sh --dry-run takeout out    # Preview moves
-./move_with_exif.sh takeout out              # Move files
+# Example: make src importable for module execution
+export PYTHONPATH=src
 ```
 
-### 2. Non-EXIF Processing (GIF/PNG/AVI files)
+## 🚀 Common Workflows
 
-```bash
-# Set file timestamps from filename patterns
-./fix_non_exif_files.sh --dry-run takeout    # Preview changes
-./fix_non_exif_files.sh takeout              # Apply fixes
+- Recommended (Set then Move):
+  - Set dates (JPEG/PNG/HEIC/MP4/MOV/3GP/AVI): `PYTHONPATH=src python3 -m gphoto_cleanup.script.set_exif_from_metadata <input_dir>`
+  - If some files still lack dates, infer from folder names: `PYTHONPATH=src python3 -m gphoto_cleanup.script.set_dates_from_folder <input_dir>`
+  - Move (photos/TIFF/PNG/videos): `PYTHONPATH=src python3 -m gphoto_cleanup.script.move_with_exif <input_dir> <output_dir>`
 
-# Move non-EXIF files
-./move_without_exif.sh --dry-run takeout out_nonexif    # Preview moves
-./move_without_exif.sh takeout out_nonexif              # Move files
-```
+- Preview Move first (dry-run default):
+  - `PYTHONPATH=src python3 -m gphoto_cleanup.script.move_with_exif "Photos from 2012" "checked 2012"`
+  - Review the count and duplicates summary, then actually move with `--execute` if OK:
+    - `PYTHONPATH=src python3 -m gphoto_cleanup.script.move_with_exif --execute "Photos from 2012" "checked 2012"`
+  - If some files lack EXIF timestamps, fill from metadata afterwards:
+    - `PYTHONPATH=src python3 -m gphoto_cleanup.script.set_exif_from_metadata "Photos from 2012" --execute`
+  - Dry-run output shows: 移動対象 (movable), 重複 (duplicates), 未移動 (not moved)
 
-### 3. Remove Duplicates
+All commands default to dry-run. Add `--execute` to actually write/move.
 
-```bash
-./remove_duplicates_fast.sh out remove           # Clean EXIF folder
-./remove_duplicates_fast.sh out_nonexif remove   # Clean non-EXIF folder
-```
+## 🛡️ Safety
+- Dry-run by default; explicit `--execute` required
+- Parallel capable (may fall back to serial in constrained environments)
+- Always work on a backup
 
-## What Each Script Does
+## 📦 対応フォーマットと更新フィールド
 
-| Script | Purpose | Input | Output |
-|--------|---------|-------|--------|
-| `fix_exif_files.sh` | Fix JPEG files: extension correction, JSON metadata extraction, filename pattern matching | `takeout/` | Files with corrected EXIF data |
-| `fix_non_exif_files.sh` | Set timestamps for GIF/PNG/AVI files from filename patterns | `takeout/` | Files with corrected timestamps |
-| `move_with_exif.sh` | Move EXIF-capable files to output directory | `takeout/` | `out/` (or custom) |
-| `move_without_exif.sh` | Move non-EXIF files to output directory | `takeout/` | `out_nonexif/` (or custom) |
-| `remove_duplicates_fast.sh` | Remove duplicate files using MD5 comparison | Any directory | Cleaned directory |
+現行コマンドが扱うフォーマットと、読み書きするメタデータ項目の一覧です。
 
-## Supported Patterns
+| コマンド | 目的 | 対象フォーマット | 参照/更新フィールド | 値の由来 | 備考 |
+|---|---|---|---|---|---|
+| `set_exif_from_metadata` | JSONから日時をまとめて書き込み | JPEG/PNG/HEIC/MP4/MOV/3GP/AVI | 書き込み: JPEG/HEIC→`EXIF:DateTimeOriginal/Create/Modify`、PNG→`EXIF:DateTimeOriginal/Create/Modify`+`XMP:DateCreated`、MP4/MOV/3GP→`QuickTime:Create/Modify/TrackCreate/MediaCreate`+`Keys:CreationDate`、AVI→`DateTimeOriginal/Create/Modify`（不可の場合は `FileModifyDate` にフォールバック） | Google Takeout の `<元ファイル>.json` / `<元ファイルのstem>.json` および `<元ファイル>.supp* .json`（例: .json, stem.json, supplemental-metadata.json, supplemental.json, supplemental-m.json, supplemental-.json など）内 `photoTakenTime.timestamp` | デフォルトはドライラン |
+| `set_dates_from_folder` | フォルダ名から日時を推定して書き込み | JPEG/PNG/HEIC/MP4/MOV/3GP/AVI | 書き込み: JPEG/HEIC→`EXIF:DateTimeOriginal/Create/Modify`、PNG→`EXIF:DateTimeOriginal/Create/Modify`+`XMP:DateCreated`、MP4/MOV/3GP→`QuickTime:Create/Modify/TrackCreate/MediaCreate`+`Keys:CreationDate`、AVI→`DateTimeOriginal/Create/Modify` | フォルダ名（例: `YYYY-MM-DD`, `YYYY_MM_DD`, `YYYYMMDD`, `YYYY-MM`, `YYYYMM`, `YYYY`, `Photos from 2024` など）を解析 | 将来的にファイル名タイムスタンプにも対応予定 |
+| `move_with_exif` | EXIF/QuickTime/XMP日時があるファイルのみを移動 | JPEG/TIFF/PNG/HEIC/MP4/MOV/3GP/AVI | 判定: `EXIF:DateTimeOriginal` / `EXIF:CreateDate` / `XMP:DateCreated`（PNG/AVI は `FileModifyDate` も可） | — | 判定に使うだけで書き込みはしない |
 
-### EXIF Processing (JPEG)
-- Extension correction: `.PNG` → `.jpg` when file is actually JPEG
-- JSON metadata: `photo.jpg.json` → EXIF DateTimeOriginal
-- Filename patterns:
-  - `Screenshot_YYYYMMDD-HHMMSS`
-  - `BURST20181222131329`
-  - Unix timestamps (10/13 digits)
-  - `Screen Shot YYYY-MM-DD at H.MM.SS AM/PM`
-
-### Non-EXIF Processing (GIF/PNG/AVI)
-- Timestamp patterns:
-  - `Screenshot_YYYYMMDD-HHMMSS`
-  - `スクリーンショット YYYY-MM-DD HH.MM.SS`
-  - `BURST20181222131329`
-  - `YYYYMMDDHHMMSS.avi`
-  - Unix timestamps
-- Folder-based year inference: `Photos from 2019/` → 2019
-
-## Safety Features
-
-- **Dry-run mode**: Use `--dry-run` to preview changes before execution
-- **Backup recommended**: Always backup your data before processing
-- **Non-destructive**: Files are moved, not copied (preserves disk space)
-- **Duplicate handling**: Automatic filename numbering for conflicts
-- **Parallel processing**: Utilizes all CPU cores for faster processing
-
-## Directory Structure
-
-```
-your-project/
-├── takeout/              # Google Photos Takeout data
-│   └── Photos from YYYY/ # Year-based folders
-├── out/                  # EXIF-processed files (Amazon Photos recognizes dates)
-├── out_nonexif/         # Non-EXIF files (sorted by modification time)
-└── scripts...           # These processing scripts
-```
-
-## Troubleshooting
-
-- **Permission denied**: Run `chmod +x *.sh`
-- **exiftool not found**: Install with your package manager
-- **No files processed**: Check input directory structure
-- **Stuck processing**: Some files may have complex patterns - check logs
-
-## Contributing
-
-Feel free to submit issues and pull requests to improve pattern matching or add new file type support.
-
-## License
-
-This project is provided as-is for personal use. Please backup your data before use.
+注意:
+- まず `set_exif_from_metadata` でJSONから日時を付与し、不足分は `set_dates_from_folder` で補完してから `move_with_exif` を実行してください。
